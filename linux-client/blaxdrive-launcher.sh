@@ -2,4 +2,4 @@
 # BlaxDrive Launcher Script
 cd "$(dirname "$0")"
 export NODE_ENV=production
-npx electron . --no-sandbox --disable-features=WebRtcHideLocalIpsWithMdns
+npx electron . --no-sandbox

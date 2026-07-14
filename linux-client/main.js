@@ -1,9 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-// Disable WebRTC local IP masking to expose all host interfaces and solve multi-IP routing
-app.commandLine.appendSwitch('disable-features', 'WebRtcHideLocalIpsWithMdns');
-
 function createWindow() {
   const win = new BrowserWindow({
     width: 1020,
@@ -16,6 +13,9 @@ function createWindow() {
     },
     title: "BlaxDrive"
   });
+
+  // Set fixed WebRTC UDP port range to 50000 to allow target UFW firewall rule
+  win.webContents.setWebRTCUDPPortRange({ min: 50000, max: 50000 });
 
   win.setMenuBarVisibility(false);
 
