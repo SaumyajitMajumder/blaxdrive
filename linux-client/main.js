@@ -1,6 +1,9 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
+// Disable WebRTC local IP masking to expose all host interfaces and solve multi-IP routing
+app.commandLine.appendSwitch('disable-features', 'WebRtcHideLocalIpsWithMdns');
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1020,

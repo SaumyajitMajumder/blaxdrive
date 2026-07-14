@@ -151,6 +151,7 @@ class WebRtcService {
 
     final localDesc = await _peerConnection!.getLocalDescription();
     if (localDesc != null) {
+      _log("Local SDP Offer:\n${localDesc.sdp}");
       localOfferBase64 = _compressSdp(localDesc.sdp!, localDesc.type!);
       _log("Offer generated successfully! Publishing to ntfy...");
       await _publishToNtfy('blaxdrive_offer_$pinCode', localOfferBase64);
@@ -224,6 +225,7 @@ class WebRtcService {
       final decoded = _decompressSdp(base64Answer);
       final sdp = decoded['sdp'] as String;
       final type = decoded['type'] as String;
+      _log("Remote SDP Answer:\n$sdp");
       
       final answerDesc = RTCSessionDescription(sdp, type);
       await _peerConnection!.setRemoteDescription(answerDesc);
