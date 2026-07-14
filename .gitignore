@@ -1,0 +1,12 @@
+# Root gitignore
+android-client/build/
+android-client/android/build/
+android-client/.dart_tool/
+android-client/.flutter-plugins
+android-client/.flutter-plugins-dependencies
+android-client/.pub-cache/
+android-client/.pub/
+linux-client/node_modules/
+linux-client/dist/
+*.log
+.DS_Store

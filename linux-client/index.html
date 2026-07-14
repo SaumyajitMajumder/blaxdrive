@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlaxDrive</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: #000000;
+        color: #ffffff;
+        font-family: 'Courier New', Courier, monospace;
+      }
+      ::selection {
+        background-color: #ffffff;
+        color: #000000;
+      }
+      /* Clean styling for standard scrollbars */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000000;
+        border-left: 1px solid #ffffff;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body class="bg-black text-white font-mono selection:bg-white selection:text-black overflow-hidden">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
