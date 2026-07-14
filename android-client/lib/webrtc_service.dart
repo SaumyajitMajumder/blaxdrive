@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:crypto/crypto.dart';
 import 'storage_helper.dart';
 
 class WebRtcService {
@@ -31,24 +32,34 @@ class WebRtcService {
     _cleanup();
     _log("Initializing peer connection...");
 
+    final secret = "openrelayprojectsecret";
+    final unixTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 24 * 3600; // 24 hours validity
+    final username = "$unixTime:blaxdrive";
+    final hmac = Hmac(sha1, utf8.encode(secret));
+    final digest = hmac.convert(utf8.encode(username));
+    final credential = base64.encode(digest.bytes);
+
     final configuration = {
       'iceServers': [
         {'urls': 'stun:stun.l.google.com:19302'},
         {'urls': 'stun:stun1.l.google.com:19302'},
+        {'urls': 'stun:stun2.l.google.com:19302'},
+        {'urls': 'stun:stun3.l.google.com:19302'},
+        {'urls': 'stun:stun4.l.google.com:19302'},
         {
-          'urls': 'turn:openrelay.metered.ca:80',
-          'username': 'openrelayproject',
-          'credential': 'openrelayproject'
+          'urls': 'turn:staticauth.openrelay.metered.ca:80',
+          'username': username,
+          'credential': credential
         },
         {
-          'urls': 'turn:openrelay.metered.ca:443',
-          'username': 'openrelayproject',
-          'credential': 'openrelayproject'
+          'urls': 'turn:staticauth.openrelay.metered.ca:443',
+          'username': username,
+          'credential': credential
         },
         {
-          'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
-          'username': 'openrelayproject',
-          'credential': 'openrelayproject'
+          'urls': 'turn:staticauth.openrelay.metered.ca:443?transport=tcp',
+          'username': username,
+          'credential': credential
         }
       ],
       'sdpSemantics': 'unified-plan'
