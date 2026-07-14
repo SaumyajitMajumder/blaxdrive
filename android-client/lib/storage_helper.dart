@@ -16,15 +16,6 @@ class StorageHelper {
     return true; // Non-Android fallback
   }
 
-  // Request Camera permission
-  static Future<bool> requestCameraPermission() async {
-    var status = await Permission.camera.status;
-    if (!status.isGranted) {
-      status = await Permission.camera.request();
-    }
-    return status.isGranted;
-  }
-
   // Build JSON tree recursively starting from rootPath
   static Map<String, dynamic> buildDirectoryTree() {
     final dir = Directory(rootPath);

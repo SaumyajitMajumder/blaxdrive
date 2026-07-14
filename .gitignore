@@ -1,12 +1,19 @@
-# Root gitignore
-android-client/build/
-android-client/android/build/
-android-client/.dart_tool/
-android-client/.flutter-plugins
-android-client/.flutter-plugins-dependencies
-android-client/.pub-cache/
-android-client/.pub/
-linux-client/node_modules/
-linux-client/dist/
+# Dependency directories
+node_modules/
+
+# Production build outputs
+dist/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Logs
 *.log
+electron.log
+
+# Local configuration / IDEs
+.idea/
+.vscode/
+*.iml
 .DS_Store

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:local_auth/local_auth.dart';
 import 'storage_helper.dart';
 import 'webrtc_service.dart';
 
@@ -11,7 +11,11 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  bool _isAuthenticated = false;
+  bool _isAuthenticating = false;
+  final LocalAuthentication _auth = LocalAuthentication();
+
   final WebRtcService _webRtcService = WebRtcService();
   bool _isSharing = false;
   String _localOffer = "";
@@ -20,15 +24,76 @@ class _HomeScreenState extends State<HomeScreen> {
   
   double _transferProgress = 0.0;
   String _transferDetails = "";
-  
-  final TextEditingController _answerController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupWebRtcCallbacks();
     _initForegroundTask();
     _checkAutoConnect();
+    _authenticate();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      setState(() {
+        _isAuthenticated = false;
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      if (!_isAuthenticated && !_isAuthenticating) {
+        _authenticate();
+      }
+    }
+  }
+
+  Future<void> _authenticate() async {
+    if (_isAuthenticating) return;
+    setState(() {
+      _isAuthenticating = true;
+    });
+
+    try {
+      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+
+      if (!canAuthenticate) {
+        _addLog("Device lock/biometrics not set up or supported. Bypassing lock.");
+        setState(() {
+          _isAuthenticated = true;
+        });
+        return;
+      }
+
+      final bool didAuthenticate = await _auth.authenticate(
+        localizedReason: 'Authenticate to access BlaxDrive storage client',
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
+      );
+
+      setState(() {
+        _isAuthenticated = didAuthenticate;
+      });
+    } catch (e) {
+      _addLog("Authentication error: $e");
+      setState(() {
+        _isAuthenticated = false;
+      });
+    } finally {
+      setState(() {
+        _isAuthenticating = false;
+      });
+    }
   }
 
   Future<void> _checkAutoConnect() async {
@@ -117,11 +182,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final cameraOk = await StorageHelper.requestCameraPermission();
-    if (!cameraOk) {
-      _addLog("Camera permission denied. QR scanning will be unavailable.");
-    }
-
     // 2. Start foreground service
     try {
       if (!await FlutterForegroundTask.isRunningService) {
@@ -136,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // 3. Generate local offer and show PIN immediately
-    final pin = await _webRtcService.getOrCreateUniquePin();
+    final pin = _webRtcService.generateRandomPin();
     setState(() {
       _isSharing = true;
       _localOffer = pin;
@@ -171,22 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addLog(String msg) {
-    print("[BlaxDrive UI] $msg");
     setState(() {
       _logs.add("[${DateTime.now().toIso8601String().substring(11, 19)}] $msg");
     });
-  }
-
-  void _handleScannedAnswer(String rawAnswer) async {
-    if (rawAnswer.trim().isEmpty) return;
-
-    _addLog("Applying scanned/pasted answer...");
-    try {
-      await _webRtcService.acceptAnswer(rawAnswer);
-      _addLog("WebRTC answer applied.");
-    } catch (e) {
-      _addLog("Failed to apply remote answer: $e");
-    }
   }
 
   @override
@@ -212,7 +259,78 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: SafeArea(
-        child: _buildMainView(),
+        child: Stack(
+          children: [
+            _isAuthenticated ? _buildMainView() : _buildLockedView(),
+            Positioned(
+              bottom: 4.0,
+              right: 8.0,
+              child: const Text(
+                "...by Saumyajit",
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 10.0,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.lock_outline,
+              color: Colors.white70,
+              size: 64.0,
+            ),
+            const SizedBox(height: 24.0),
+            const Text(
+              "BLAXDRIVE LOCKED",
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'monospace',
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2.0,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            const Text(
+              "Authentication required to access local files",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white54,
+                fontFamily: 'monospace',
+                fontSize: 12.0,
+              ),
+            ),
+            const SizedBox(height: 36.0),
+            TextButton(
+              style: TextButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+              ),
+              onPressed: _authenticate,
+              child: Text(
+                _isAuthenticating ? "[ Authenticating... ]" : "[ Tap to Unlock ]",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -307,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.white, width: 2.0),
-                        color: Colors.white.withOpacity(0.05),
+                        color: const Color.fromRGBO(255, 255, 255, 0.05),
                       ),
                       child: Text(
                         _localOffer,

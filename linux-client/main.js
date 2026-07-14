@@ -14,9 +14,6 @@ function createWindow() {
     title: "BlaxDrive"
   });
 
-  // Set fixed WebRTC UDP port range to 50000 to allow target UFW firewall rule
-  win.webContents.setWebRTCUDPPortRange({ min: 50000, max: 50000 });
-
   win.setMenuBarVisibility(false);
 
   if (process.env.NODE_ENV === 'development') {

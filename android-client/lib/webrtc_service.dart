@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crypto/crypto.dart';
 import 'storage_helper.dart';
 
 class WebRtcService {
@@ -32,15 +31,20 @@ class WebRtcService {
     _cleanup();
     _log("Initializing peer connection...");
 
-    final secret = "openrelayprojectsecret";
-    final unixTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 24 * 3600; // 24 hours validity
-    final username = "$unixTime:blaxdrive";
-    final hmac = Hmac(sha1, utf8.encode(secret));
-    final digest = hmac.convert(utf8.encode(username));
-    final credential = base64.encode(digest.bytes);
-
     final configuration = {
-      'iceServers': <Map<String, dynamic>>[],
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'},
+        {
+          'urls': [
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp'
+          ],
+          'username': 'openrelayproject',
+          'credential': 'openrelayproject'
+        }
+      ],
       'sdpSemantics': 'unified-plan'
     };
 
@@ -105,26 +109,19 @@ class WebRtcService {
     };
   }
 
-  Future<String> getOrCreateUniquePin() async {
-    final prefs = await SharedPreferences.getInstance();
-    var pin = prefs.getString('unique_device_pin');
-    if (pin == null || pin.length != 6) {
-      pin = (100000 + Random().nextInt(900000)).toString();
-      await prefs.setString('unique_device_pin', pin);
-    }
-    return pin;
+  String generateRandomPin() {
+    return (100000 + Random().nextInt(900000)).toString();
   }
 
   // Create local offer
   Future<void> generateOffer(String pin) async {
     _answerPollTimer?.cancel();
+    pinCode = pin;
+    _log("Using PIN Code: $pinCode");
 
     if (_peerConnection == null) {
       await initializeConnection();
     }
-
-    pinCode = pin;
-    _log("Using PIN Code: $pinCode");
 
     _log("Creating WebRTC Offer...");
     final offer = await _peerConnection!.createOffer({});
@@ -151,7 +148,6 @@ class WebRtcService {
 
     final localDesc = await _peerConnection!.getLocalDescription();
     if (localDesc != null) {
-      _log("Local SDP Offer:\n${localDesc.sdp}");
       localOfferBase64 = _compressSdp(localDesc.sdp!, localDesc.type!);
       _log("Offer generated successfully! Publishing to ntfy...");
       await _publishToNtfy('blaxdrive_offer_$pinCode', localOfferBase64);
@@ -225,7 +221,6 @@ class WebRtcService {
       final decoded = _decompressSdp(base64Answer);
       final sdp = decoded['sdp'] as String;
       final type = decoded['type'] as String;
-      _log("Remote SDP Answer:\n$sdp");
       
       final answerDesc = RTCSessionDescription(sdp, type);
       await _peerConnection!.setRemoteDescription(answerDesc);
@@ -581,7 +576,9 @@ class WebRtcService {
   }
 
   void _log(String msg) {
-    print("[BlaxDrive WebRTC] $msg");
+    if (kDebugMode) {
+      print("[BlaxDrive WebRTC] $msg");
+    }
     onStatusMessage?.call(msg);
   }
 }

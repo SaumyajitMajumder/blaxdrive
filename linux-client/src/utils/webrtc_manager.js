@@ -106,44 +106,20 @@ export class WebRtcManager {
     this.cleanup();
     this.log("Initializing peer connection...");
 
-    // Generate dynamic TURN credentials using openrelayproject secret-key auth
-    let turnUsername = "";
-    let turnCredential = "";
-    try {
-      const secret = "openrelayprojectsecret";
-      const unixTime = Math.floor(Date.now() / 1000) + 24 * 3600; // 24 hours validity
-      turnUsername = `${unixTime}:blaxdrive`;
-      
-      const encoder = new TextEncoder();
-      const secretBuffer = encoder.encode(secret);
-      const usernameBuffer = encoder.encode(turnUsername);
-      
-      const cryptoKey = await window.crypto.subtle.importKey(
-        "raw",
-        secretBuffer,
-        { name: "HMAC", hash: "SHA-1" },
-        false,
-        ["sign"]
-      );
-      
-      const signatureBuffer = await window.crypto.subtle.sign(
-        "HMAC",
-        cryptoKey,
-        usernameBuffer
-      );
-      
-      const signatureBytes = new Uint8Array(signatureBuffer);
-      let binaryString = "";
-      for (let i = 0; i < signatureBytes.byteLength; i++) {
-        binaryString += String.fromCharCode(signatureBytes[i]);
-      }
-      turnCredential = window.btoa(binaryString);
-    } catch (e) {
-      this.log(`Failed to generate dynamic TURN credentials: ${e.message}`);
-    }
-
     const configuration = {
-      iceServers: []
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        {
+          urls: [
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp'
+          ],
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ]
     };
 
     this.peerConnection = new RTCPeerConnection(configuration);

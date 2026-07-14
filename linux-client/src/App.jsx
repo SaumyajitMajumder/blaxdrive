@@ -362,6 +362,11 @@ export default function App() {
         </div>
       </div>
 
+      {/* Footer Signature */}
+      <div className="flex justify-end pt-1.5 text-[10px] text-white/50 font-mono select-none">
+        ...by Saumyajit
+      </div>
+
       {/* Modals Overlay */}
       {modalType && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -428,11 +433,12 @@ export default function App() {
                 >
                   [ Confirm ]
                 </button>
-              </div>
             </div>
           </div>
         </div>
+      </div>
       )}
+
     </div>
   );
 }

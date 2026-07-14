@@ -1,84 +1,100 @@
-# BlaxDrive
+# BlaxDrive // Serverless P2P Private Storage
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Electron](https://img.shields.io/badge/Electron-47848F?style=flat&logo=electron&logoColor=white)](https://www.electronjs.org)
-[![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white)](https://webrtc.org)
-
-**BlaxDrive** is a premium, secure, and minimalist Peer-to-Peer (P2P) storage and file-sharing bridge. It establishes a direct WebRTC link between your Linux PC and Android phone, enabling lightning-fast transfers across any network without uploading your data to third-party cloud servers.
+BlaxDrive is a decentralized, serverless private storage access system that allows you to explore, download, upload, and manage files on your Android device directly from a Linux PC using secure WebRTC Data Channels. Signaling is handled out-of-band via a temporary broker using an instant 6-digit PIN.
 
 ---
 
-## ✨ Features
+## 🔒 Features
 
-*   **🔒 Pure P2P Security:** Direct data channel connection using WebRTC. Your files never touch the cloud.
-*   **📡 Cross-Network Connectivity:** Streamlined STUN/TURN traversal works seamlessly across different Wi-Fi networks, mobile data, and firewalls.
-*   **🔑 System Passcode Authentication:** Protected by Android's native Lock Screen Shield (PIN, Pattern, Password, or Biometrics) before allowing access.
-*   **📌 Persistent Unique PIN:** Each device displays a static, persistent 6-digit pairing PIN, removing the friction of scanning QR codes.
-*   **🔋 Background Execution:** The Android application runs as a foreground service with a persistent notification, ensuring sharing remains active even when the app is closed.
-
----
-
-## 📥 Download & Installation Manual
-
-### 📱 Android Mobile Client
-
-#### Option 1: Quick Install (Recommended)
-You can directly copy the precompiled production APK from the build directory to your phone:
-*   **Path to APK:** `android-client/build/app/outputs/flutter-apk/app-release.apk`
-*   Transfer this file to your phone and open it to install the application.
-
-#### Option 2: Build from Source
-If you wish to compile the mobile client yourself:
-1.  Install the [Flutter SDK](https://docs.flutter.dev/get-started/install).
-2.  Enable Developer Options and USB Debugging on your Android phone.
-3.  Connect your phone to your PC via USB.
-4.  Navigate to the directory and install dependencies:
-    ```bash
-    cd android-client
-    flutter pub get
-    ```
-5.  Run/install the application on your connected device:
-    ```bash
-    flutter run --release
-    ```
+- **Direct P2P Link**: High-speed, secure direct data channel connections using WebRTC—no central cloud storage or middlemen.
+- **Instant Pairing**: Enter a 6-digit PIN code to establish a link. No accounts, QR codes, or camera access required.
+- **Biometric / Lock Screen Security**: The Android app is secured using your phone's native lock credentials (fingerprint, face, PIN, pattern, or password) on launch and background resume.
+- **Background Persistence**: A background foreground service keeps sharing active on Android even if you lock the device or swipe the app closed.
+- **Monospace Terminal Aesthetic**: Clean, responsive styling.
+- **Full Storage Operations**: Navigate directories, download files in binary slices, create files/folders, delete items, and upload files via drag-and-drop.
 
 ---
 
-### 💻 Linux/Desktop Client
+## 🛠️ Download & Build Manual
 
-#### Build and Run the App
-1.  Ensure you have [Node.js](https://nodejs.org/) installed.
-2.  Navigate to the `linux-client` directory:
-    ```bash
-    cd linux-client
-    ```
-3.  Install dependencies:
-    ```bash
-    npm install
-    ```
-4.  Start the Electron desktop client:
-    ```bash
-    npm run dev
-    ```
+### 📱 Android Companion App (`android-client`)
+
+#### Prerequisites
+- Flutter SDK (version 3.19+ recommended)
+- Java JDK 17
+- Android SDK
+
+#### Building from Source
+1. Navigate to the Android client folder:
+   ```bash
+   cd android-client
+   ```
+2. Retrieve packages:
+   ```bash
+   flutter pub get
+   ```
+3. Compile the production release APK:
+   ```bash
+   flutter build apk --release
+   ```
+4. Find the built APK at:
+   `build/app/outputs/flutter-apk/app-release.apk`
+5. Install on your Android device:
+   ```bash
+   adb install build/app/outputs/flutter-apk/app-release.apk
+   ```
 
 ---
 
-## 📖 User Manual & Pairing Guide
+### 💻 Linux Desktop App (`linux-client`)
 
-Follow these steps to establish a connection and begin sharing files:
+#### Prerequisites
+- Node.js (v18+)
+- npm
 
-### Step 1: Open and Authenticate on Mobile
-1.  Launch **BlaxDrive** on your Android device.
-2.  Verify your identity using your phone's lock screen security credentials (PIN, fingerprint, face, or pattern).
-3.  The app will display your **Unique 6-digit PIN**.
+#### Building & Running
+1. Navigate to the Linux client folder:
+   ```bash
+   cd linux-client
+   ```
+2. Install npm dependencies:
+   ```bash
+   npm install
+   ```
+3. Build production assets:
+   ```bash
+   npm run build
+   ```
+4. Run the desktop application launcher:
+   ```bash
+   ./blaxdrive-launcher.sh
+   ```
 
-### Step 2: Start Sharing
-1.  Tap **`Start Sharing`** on your phone.
-2.  The app will generate a secure WebRTC offer and display a notification confirming that sharing is running in the background.
+---
 
-### Step 3: Connect on your PC
-1.  Open the **BlaxDrive** desktop app on your Linux PC.
-2.  Enter the **6-digit PIN** shown on your phone's screen.
-3.  Click **`ESTABLISH LINK`**.
-4.  Once paired, you can view your phone's storage tree, download files, create folders, and upload files directly from your PC!
+## 📖 User Manual
+
+### Step 1: Unlock and Start Sharing
+1. Launch the **BlaxDrive** app on your Android phone.
+2. Authenticate using your phone's lock screen password, PIN, pattern, or biometrics.
+3. Click the **`[ Start Sharing ]`** button.
+4. A random 6-digit PIN code will generate and display on the screen immediately.
+
+### Step 2: Establish the Connection
+1. Launch the **BlaxDrive** desktop app on your Linux PC.
+2. Enter the 6-digit PIN code displayed on the Android screen.
+3. Press Enter or click **`[ ESTABLISH LINK ]`**.
+4. The system will handshake over the temporary signaling broker and establish a direct WebRTC connection.
+
+### Step 3: Manage Your Storage
+* **Navigate**: Double-click or click **`[Open]`** next to a directory to enter it.
+* **Download**: Click **`[Download]`** next to any file. The file is sliced, piped over the WebRTC data channel, and saved to your downloads path.
+* **Create Folder/File**: Click **`[ + New Folder ]`** or **`[ + New File ]`** at the top right, enter the name in the prompt, and click Confirm.
+* **Upload**: Drag files from your Linux file explorer and drop them anywhere inside the main explorer panel to upload them to the current directory path.
+* **Delete**: Click **`[Delete]`** next to a file or folder to permanently delete it.
+* **Disconnect**: Click **`[ Disconnect ]`** to close the session.
+
+---
+
+## 👥 Authors
+* Developed by Saumyajit
