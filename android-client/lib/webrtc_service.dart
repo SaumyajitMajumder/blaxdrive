@@ -405,7 +405,7 @@ class WebRtcService {
       return;
     }
 
-    final bd = ByteData.view(bytes.buffer);
+    final bd = ByteData.view(bytes.buffer, bytes.offsetInBytes, bytes.length);
     final packetType = bd.getUint8(0);
     
     // Type 1 is Upload (PC to Phone)
@@ -499,7 +499,7 @@ class WebRtcService {
 
         // Build binary packet
         final packet = Uint8List(13 + buffer.length);
-        final bd = ByteData.view(packet.buffer);
+        final bd = ByteData.view(packet.buffer, packet.offsetInBytes, packet.length);
         bd.setUint8(0, 2); // Type 2 = Download (Phone -> PC)
         bd.setUint32(1, fileId, Endian.big);
         bd.setUint32(5, chunkIndex, Endian.big);

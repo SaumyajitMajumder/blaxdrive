@@ -290,7 +290,7 @@ export class WebRtcManager {
     const fileId = view.getUint32(1, false);
     const chunkIndex = view.getUint32(5, false);
     const totalChunks = view.getUint32(9, false);
-    const payload = new Uint8Array(buffer, 13);
+    const payload = new Uint8Array(buffer, 13).slice();
 
     const active = this.activeDownloads[fileId];
     if (!active) {
