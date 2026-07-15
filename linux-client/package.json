@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "package": "npm run build && electron-builder"
   },
   "dependencies": {

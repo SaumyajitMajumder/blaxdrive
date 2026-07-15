@@ -17,6 +17,23 @@ function createWindow() {
 
   win.setMenuBarVisibility(false);
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        width: 1000,
+        height: 800,
+        autoHideMenuBar: true,
+        title: "BlaxDrive File Viewer",
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: false
+        }
+      }
+    };
+  });
+
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:5173');
   } else {
