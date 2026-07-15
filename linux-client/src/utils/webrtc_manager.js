@@ -327,7 +327,21 @@ export class WebRtcManager {
       this.log(`Assembly complete. Processing ${active.name} (${active.mode})...`);
       this.onTransferProgress(100, `Complete: ${active.name}`);
 
-      const blob = new Blob(active.chunks);
+      const ext = active.name.split('.').pop().toLowerCase();
+      let mimeType = '';
+      if (ext === 'pdf') {
+        mimeType = 'application/pdf';
+      } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
+        mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+      } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+        mimeType = `audio/${ext}`;
+      } else if (['mp4', 'webm'].includes(ext)) {
+        mimeType = `video/${ext}`;
+      } else if (['txt', 'json', 'js', 'jsx', 'css', 'html', 'dart', 'py', 'xml', 'md', 'log', 'sh', 'yaml', 'yml'].includes(ext)) {
+        mimeType = 'text/plain';
+      }
+
+      const blob = mimeType ? new Blob(active.chunks, { type: mimeType }) : new Blob(active.chunks);
 
       if (active.mode === 'view') {
         this.onFileReceivedForPreview(active.name, blob);

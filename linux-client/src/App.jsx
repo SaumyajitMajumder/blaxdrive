@@ -477,8 +477,8 @@ export default function App() {
 
       {/* File Preview Overlay */}
       {previewFile && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="border border-white bg-black p-6 w-full max-w-4xl font-mono text-white flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black flex flex-col z-50 p-4 font-mono text-white">
+          <div className="border border-white bg-black p-4 w-full h-full flex flex-col overflow-hidden">
             <div className="flex justify-between items-center border-b border-white pb-2 mb-4">
               <h2 className="text-xs font-bold uppercase tracking-wider">
                 &gt; PREVIEW: {previewFile.name} ({previewFile.type})
@@ -491,21 +491,21 @@ export default function App() {
               </button>
             </div>
             
-            <div className="flex-1 overflow-auto flex items-center justify-center bg-black/40 p-2 border border-white/15">
+            <div className="flex-1 overflow-hidden flex items-center justify-center bg-black/40 p-2 border border-white/15">
               {previewFile.type === 'image' && (
-                <img src={previewFile.contentUrl} className="max-w-full max-h-[65vh] object-contain" alt={previewFile.name} />
+                <img src={previewFile.contentUrl} className="max-w-full max-h-full object-contain" alt={previewFile.name} />
               )}
               {previewFile.type === 'pdf' && (
-                <iframe src={previewFile.contentUrl} className="w-full h-[65vh] border-0" title="PDF Preview" />
+                <iframe src={previewFile.contentUrl} className="w-full h-full border-0" title="PDF Preview" />
               )}
               {previewFile.type === 'text' && (
-                <pre className="w-full h-[65vh] overflow-auto text-left text-[11px] text-white/95 select-text whitespace-pre-wrap font-mono p-2">
+                <pre className="w-full h-full overflow-auto text-left text-[11px] text-white/95 select-text whitespace-pre-wrap font-mono p-2">
                   {previewFile.textContent}
                 </pre>
               )}
               {previewFile.type === 'media' && (
                 previewFile.name.endsWith('.mp4') || previewFile.name.endsWith('.webm') ? (
-                  <video src={previewFile.contentUrl} controls className="max-w-full max-h-[65vh]" />
+                  <video src={previewFile.contentUrl} controls className="max-w-full max-h-full" />
                 ) : (
                   <audio src={previewFile.contentUrl} controls className="w-full" />
                 )
