@@ -28,6 +28,7 @@ export default function App() {
 
   // Auto reconnect tracking
   const [isAutoReconnecting, setIsAutoReconnecting] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   useEffect(() => {
     // Setup callbacks
@@ -55,6 +56,33 @@ export default function App() {
           setProgressDetails('');
         }, 3000);
       }
+    };
+
+    manager.onFileReceivedForPreview = async (name, blob) => {
+      const ext = name.split('.').pop().toLowerCase();
+      let type = 'unknown';
+      let textContent = '';
+      let contentUrl = '';
+
+      if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext)) {
+        type = 'image';
+        contentUrl = URL.createObjectURL(blob);
+      } else if (ext === 'pdf') {
+        type = 'pdf';
+        contentUrl = URL.createObjectURL(blob);
+      } else if (['txt', 'json', 'js', 'jsx', 'css', 'html', 'dart', 'py', 'xml', 'md', 'log', 'sh', 'yaml', 'yml'].includes(ext)) {
+        type = 'text';
+        try {
+          textContent = await blob.text();
+        } catch (e) {
+          textContent = 'Failed to decode text content.';
+        }
+      } else if (['mp3', 'wav', 'ogg', 'mp4', 'webm'].includes(ext)) {
+        type = 'media';
+        contentUrl = URL.createObjectURL(blob);
+      }
+
+      setPreviewFile({ name, type, contentUrl, textContent, blob });
     };
 
     // Initialize connection interface and try auto-reconnect
@@ -87,6 +115,13 @@ export default function App() {
       setConnState('disconnected');
       setPinError(err.message || 'Failed to connect. Please try again.');
     }
+  };
+
+  const handleClosePreview = () => {
+    if (previewFile && previewFile.contentUrl) {
+      URL.revokeObjectURL(previewFile.contentUrl);
+    }
+    setPreviewFile(null);
   };
 
   const handleCreateFolder = () => {
@@ -289,6 +324,7 @@ export default function App() {
           {directoryTree ? (
             <FileTree 
               node={directoryTree} 
+              onView={(path) => manager.downloadFile(path, 'view')}
               onDownload={(path) => manager.downloadFile(path)}
               onDelete={(path) => manager.deletePath(path)}
               onSelectDirectory={(path) => setSelectedDirectory(path)}
@@ -437,6 +473,64 @@ export default function App() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* File Preview Overlay */}
+      {previewFile && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="border border-white bg-black p-6 w-full max-w-4xl font-mono text-white flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center border-b border-white pb-2 mb-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider">
+                &gt; PREVIEW: {previewFile.name} ({previewFile.type})
+              </h2>
+              <button 
+                onClick={handleClosePreview}
+                className="text-xs hover:bg-white hover:text-black px-2 py-0.5 border border-transparent hover:border-black"
+              >
+                [ Close Preview ]
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto flex items-center justify-center bg-black/40 p-2 border border-white/15">
+              {previewFile.type === 'image' && (
+                <img src={previewFile.contentUrl} className="max-w-full max-h-[65vh] object-contain" alt={previewFile.name} />
+              )}
+              {previewFile.type === 'pdf' && (
+                <iframe src={previewFile.contentUrl} className="w-full h-[65vh] border-0" title="PDF Preview" />
+              )}
+              {previewFile.type === 'text' && (
+                <pre className="w-full h-[65vh] overflow-auto text-left text-[11px] text-white/95 select-text whitespace-pre-wrap font-mono p-2">
+                  {previewFile.textContent}
+                </pre>
+              )}
+              {previewFile.type === 'media' && (
+                previewFile.name.endsWith('.mp4') || previewFile.name.endsWith('.webm') ? (
+                  <video src={previewFile.contentUrl} controls className="max-w-full max-h-[65vh]" />
+                ) : (
+                  <audio src={previewFile.contentUrl} controls className="w-full" />
+                )
+              )}
+              {previewFile.type === 'unknown' && (
+                <div className="text-center py-10">
+                  <div className="text-xs text-white/50 italic mb-4">No inline preview available for this file extension.</div>
+                  <button
+                    onClick={() => {
+                      const url = URL.createObjectURL(previewFile.blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = previewFile.name;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="border border-white hover:bg-white hover:text-black px-4 py-2 text-xs font-bold focus:outline-none"
+                  >
+                    [ Download Instead ]
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

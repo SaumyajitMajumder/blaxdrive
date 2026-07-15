@@ -41,6 +41,7 @@ export class WebRtcManager {
     this.onConnectionState = () => {};
     this.onTreeReceived = () => {};
     this.onTransferProgress = () => {}; // (percent, details)
+    this.onFileReceivedForPreview = () => {}; // (name, blob)
   }
 
   async publishToNtfy(topic, message) {
@@ -144,10 +145,21 @@ export class WebRtcManager {
     this.dataChannel.onopen = () => {
       this.log("Data channel opened. Requesting storage tree...");
       this.requestTree();
+
+      // Keep-alive ping every 15 seconds to prevent NAT/UDP timeouts
+      this.pingInterval = setInterval(() => {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.sendTextMessage({ type: 'ping' });
+        }
+      }, 15000);
     };
 
     this.dataChannel.onclose = () => {
       this.log("Data channel closed.");
+      if (this.pingInterval) {
+        clearInterval(this.pingInterval);
+        this.pingInterval = null;
+      }
       this.onConnectionState("disconnected");
     };
 
@@ -224,9 +236,11 @@ export class WebRtcManager {
     this.sendTextMessage({ type: 'request_tree' });
   }
 
-  // Request file download from Android
-  downloadFile(path) {
-    this.log(`Requesting file download: ${path.split('/').pop()}`);
+  // Request file download/view from Android
+  downloadFile(path, mode = 'download') {
+    this.log(`Requesting file for ${mode}: ${path.split('/').pop()}`);
+    if (!this.pendingModes) this.pendingModes = {};
+    this.pendingModes[path] = mode;
     this.sendTextMessage({ type: 'download_file', path });
   }
 
@@ -247,13 +261,18 @@ export class WebRtcManager {
           break;
 
         case 'download_start':
-          const { fileId, name, size, totalChunks } = msg;
+          const { fileId, name, size, totalChunks, path } = msg;
           this.log(`Downloading: ${name} (${(size / (1024 * 1024)).toFixed(2)} MB, ${totalChunks} chunks)`);
+          
+          const mode = (this.pendingModes && this.pendingModes[path]) || 'download';
+          if (this.pendingModes) delete this.pendingModes[path];
+
           this.activeDownloads[fileId] = {
             name,
             size,
             totalChunks,
             receivedCount: 0,
+            mode,
             chunks: new Array(totalChunks)
           };
           this.onTransferProgress(0, `Receiving ${name}: 0%`);
@@ -305,16 +324,21 @@ export class WebRtcManager {
     this.onTransferProgress(percent, `Receiving ${active.name}: ${percent}%`);
 
     if (active.receivedCount === active.totalChunks) {
-      this.log(`Assembly complete. Downloading ${active.name} in browser...`);
-      this.onTransferProgress(100, `Download complete: ${active.name}`);
+      this.log(`Assembly complete. Processing ${active.name} (${active.mode})...`);
+      this.onTransferProgress(100, `Complete: ${active.name}`);
 
       const blob = new Blob(active.chunks);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = active.name;
-      a.click();
-      URL.revokeObjectURL(url);
+
+      if (active.mode === 'view') {
+        this.onFileReceivedForPreview(active.name, blob);
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = active.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
 
       delete this.activeDownloads[fileId];
     }
@@ -442,6 +466,10 @@ export class WebRtcManager {
   }
 
   cleanup() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
     this.activeDownloads = {};
     if (this.peerConnection) {
       try {

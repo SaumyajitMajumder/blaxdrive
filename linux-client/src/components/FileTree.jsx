@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function FileTree({ node, depth = 0, onDownload, onDelete, onSelectDirectory, selectedDirectory }) {
+export default function FileTree({ node, depth = 0, onView, onDownload, onDelete, onSelectDirectory, selectedDirectory }) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!node) return null;
@@ -66,6 +66,12 @@ export default function FileTree({ node, depth = 0, onDownload, onDelete, onSele
           ) : (
             <>
               <button 
+                onClick={() => onView(node.path)} 
+                className="hover:bg-white hover:text-black px-1 focus:outline-none mr-2 border border-transparent hover:border-black"
+              >
+                [Open]
+              </button>
+              <button 
                 onClick={() => onDownload(node.path)} 
                 className="hover:bg-white hover:text-black px-1 focus:outline-none mr-2 border border-transparent hover:border-black"
               >
@@ -93,6 +99,7 @@ export default function FileTree({ node, depth = 0, onDownload, onDelete, onSele
               key={child.path || idx} 
               node={child} 
               depth={depth + 1} 
+              onView={onView}
               onDownload={onDownload} 
               onDelete={onDelete}
               onSelectDirectory={onSelectDirectory}
